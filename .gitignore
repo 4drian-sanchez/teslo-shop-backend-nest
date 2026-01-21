@@ -4,6 +4,7 @@
 /node_modules
 /build
 /postgres/
+/static/uploads/
 
 # Logs
 logs

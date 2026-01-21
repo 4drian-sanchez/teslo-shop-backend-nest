@@ -16,3 +16,7 @@ docker-compose up -d
 ```
 npm run start:dev
 ```
+6. Ejecutar el Seed para tener datos ficticios en la BD
+```
+http://localhost:3000/api/seed
+```
