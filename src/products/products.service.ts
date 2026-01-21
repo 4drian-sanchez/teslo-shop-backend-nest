@@ -2,10 +2,10 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Product } from './entities/product.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/Pagination.dto';
 import { UUID_V4_REGEX } from 'src/helpers';
+import { ProductImage, Product } from './entities';
 
 @Injectable()
 export class ProductsService {
@@ -14,13 +14,23 @@ export class ProductsService {
 
   constructor(
     @InjectRepository(Product)
-    private readonly productReposity: Repository<Product>
+    private readonly productReposity: Repository<Product>,
+    @InjectRepository(ProductImage)
+    private readonly productImageReposity: Repository<ProductImage>,
+
+    private readonly dataSource: DataSource
   ) { }
 
   async create(createProductDto: CreateProductDto) {
+    //* transforma el slug a lowerCase
     createProductDto.slug = createProductDto.slug?.toLowerCase()
+
+    const { images = [], ...productDetails } = createProductDto
     try {
-      const product = this.productReposity.create(createProductDto)
+      const product = this.productReposity.create({
+        ...productDetails,
+        images: images.map(url => this.productImageReposity.create({ url }))
+      })
       await this.productReposity.save(product)
       return product
 
@@ -35,10 +45,16 @@ export class ProductsService {
 
     const products = await this.productReposity.find({
       take: limmit,
-      skip
+      skip,
+      relations: {
+        images: true
+      }
     })
     if (!products) throw new NotFoundException('No se encontraron productos en la BD')
-    return products
+    return products.map(product => ({
+      ...product,
+      images: product.images?.map(image => image.url)
+    }))
   }
 
   async findOne(term: string) {
@@ -53,6 +69,7 @@ export class ProductsService {
       // Buscar por slug o título del producto
       const queryBuilder = this.productReposity.createQueryBuilder('prod');
       product = await queryBuilder
+        .leftJoinAndSelect('prod.images', 'images')
         .where('UPPER(prod.title) = :title OR prod.slug = :slug', {
           title: term.toUpperCase(),
           slug: term.toLowerCase()
@@ -61,22 +78,50 @@ export class ProductsService {
     }
 
     if (!product) throw new NotFoundException(`El producto con el id ${term} no ha sido encontrado`)
-    return product
+
+    return {
+      ...product,
+      images: product.images?.map(image => image.url)
+    }
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
+
+    const { images, ...updatedProduct } = updateProductDto
+
     const product = await this.productReposity.preload({
-      id: id,
-      ...updateProductDto
+      id,
+      ...updatedProduct
     });
 
     if (!product) throw new NotFoundException(`Producto con ID ${id} no encontrado`);
-    
+
+    //Create query runner
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+
+    //* Una transacción son varias query que pueden afectar a la base de datos
+
     try {
-      // Guardar los cambios
-      return await this.productReposity.save(product);
-      
+
+      if (images) {
+        await queryRunner.manager.delete(ProductImage, { product: id })
+        product.images = images.map(image => {
+          return this.productImageReposity.create({ url: image })
+        })
+      }
+
+      await queryRunner.manager.save(product)
+      await queryRunner.commitTransaction()
+      await queryRunner.release()
+      return {
+        ...product,
+        images: product.images?.map(image => image.url)
+      }
     } catch (error) {
+      await queryRunner.rollbackTransaction()
+      await queryRunner.release()
       this.exceptionsDB(error)
     }
   }
@@ -92,6 +137,14 @@ export class ProductsService {
       productDeleted
     }
   }
+  
+    deleteAllProducts() {
+      try {
+        this.productReposity.deleteAll()
+      } catch (error) {
+        this.exceptionsDB(error)
+      }
+    }
 
   private exceptionsDB(error: any) {
     if (error.code === '23505') {
