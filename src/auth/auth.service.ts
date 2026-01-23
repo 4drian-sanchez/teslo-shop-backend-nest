@@ -61,6 +61,13 @@ export class AuthService {
       }
   }
 
+  checkAuthStatus( id : string ) {
+      return {
+        ok: true,
+        jwt: this.generateJwt({id})
+      }
+  }
+
   generateJwt( payload : { id : string } ) {
     return this.jwtService.sign( payload )
   }

@@ -6,6 +6,7 @@ import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dto/Pagination.dto';
 import { UUID_V4_REGEX } from 'src/helpers';
 import { ProductImage, Product } from './entities';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -21,7 +22,7 @@ export class ProductsService {
     private readonly dataSource: DataSource
   ) { }
 
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
     //* transforma el slug a lowerCase
     createProductDto.slug = createProductDto.slug?.toLowerCase()
 
@@ -29,7 +30,8 @@ export class ProductsService {
     try {
       const product = this.productReposity.create({
         ...productDetails,
-        images: images.map(url => this.productImageReposity.create({ url }))
+        images: images.map(url => this.productImageReposity.create({ url })),
+        user
       })
       await this.productReposity.save(product)
       return product
@@ -137,14 +139,14 @@ export class ProductsService {
       productDeleted
     }
   }
-  
-    deleteAllProducts() {
-      try {
-        this.productReposity.deleteAll()
-      } catch (error) {
-        this.exceptionsDB(error)
-      }
+
+  async deleteAllProducts() {
+    try {
+      await this.productReposity.deleteAll()
+    } catch (error) {
+      this.exceptionsDB(error)
     }
+  }
 
   private exceptionsDB(error: any) {
     if (error.code === '23505') {

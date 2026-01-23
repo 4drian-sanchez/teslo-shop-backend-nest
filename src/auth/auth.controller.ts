@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { RawHeaders, RoleProtected, GetUser } from './decorators';
 import { UserRoleGuard } from './guards/user-role/user-role.guard';
 import { Roles } from './interfaces';
+import { Auth } from './decorators/auth/auth.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -31,16 +32,33 @@ export class AuthController {
     @RawHeaders() rawHeaders: string[],
     //@Headers() headers : IncomingHttpHeaders ← Otra forma de obtener los headers
   ) {
-    console.log(rawHeaders)
+    
     return {
       user
     }
+  }
+
+  @Get('check-auth-status')
+  @Auth(Roles.user)
+  checkAuthStatus(
+    @GetUser() user : User
+  ) {
+    return this.authService.checkAuthStatus( user.id )
+    
   }
 
   @Get('private2')
   @RoleProtected( Roles.superUser)
   @UseGuards( AuthGuard(), UserRoleGuard )
   testingPrivateRoute2(
+    @GetUser() user: User,
+  ) {
+    return user
+  }
+
+  @Get('private3')
+  @Auth(Roles.admin)
+  testingPrivateRoute3(
     @GetUser() user: User,
   ) {
     return user
