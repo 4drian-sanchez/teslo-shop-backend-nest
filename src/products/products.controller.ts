@@ -7,6 +7,9 @@ import { Auth } from 'src/auth/decorators/auth/auth.decorator';
 import { Roles } from 'src/auth/interfaces';
 import { GetUser } from 'src/auth/decorators';
 import { User } from 'src/auth/entities/user.entity';
+import { ApiResponse } from '@nestjs/swagger';
+import { Product } from './entities';
+
 
 @Controller('products')
 export class ProductsController {
@@ -16,6 +19,10 @@ export class ProductsController {
 
   @Post()
   @Auth(Roles.admin)
+  @ApiResponse({status: 401, description: 'Unauthorized - Invalid JWT'})
+  @ApiResponse({status: 403, description: 'User adrian need a valid role: admin'})
+  @ApiResponse({status: 201, description: 'Producto creado correctamente', type: Product})
+
   create(
     @Body() createProductDto: CreateProductDto,
     @GetUser() user : User
