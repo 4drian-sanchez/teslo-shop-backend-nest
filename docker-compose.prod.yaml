@@ -1,0 +1,17 @@
+services:
+
+  app:
+    container_name: teslo_shop
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      NODE_ENV: prod
+      DB_PASS: ${DB_PASS}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      PORT: ${PORT}
+      BASE_URL: ${BASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+
