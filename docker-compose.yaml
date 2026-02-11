@@ -1,37 +1,37 @@
 services:
 
-  app:
-    container_name: app_dev
-    build: 
-      context: .
-      dockerfile: dockerfile
-      target: dev
-    ports:
-      - "3000:3000"
-      - "9229:9229" #puerto para debuggear con VS Code
-    volumes:
-      - .:/app           # Sincroniza el local con el contenedor
-      - /app/node_modules # "Nodo ciego": evita que el host sobreescriba los módulos del contenedor
-    environment:
-      NODE_ENV: development
-      DB_PASS: ${DB_PASS}
-      DB_NAME: ${DB_NAME}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_USERNAME: ${DB_USERNAME}
-      PORT: ${PORT}
-      BASE_URL: ${BASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
+  # app:
+  #   container_name: teslo_shop_dev
+  #   depends_on:
+  #     - db
+  #   build: 
+  #     context: .
+  #     dockerfile: dockerfile.dev
+  #   ports:
+  #     - "3000:3000"
+  #     # - "9229:9229" #puerto para debuggear con VS Code
+  #   volumes:
+  #     - .:/app           # Sincroniza el local con el contenedor
+  #     - /app/node_modules # "Nodo ciego": evita que el host sobreescriba los módulos del contenedor
+  #   environment:
+  #     NODE_ENV: development
+  #     DB_PASS: ${DB_PASS}
+  #     DB_NAME: ${DB_NAME}
+  #     DB_HOST: ${DB_HOST}
+  #     DB_PORT: ${DB_PORT}
+  #     DB_USERNAME: ${DB_USERNAME}
+  #     PORT: ${PORT}
+  #     BASE_URL: ${BASE_URL}
+  #     JWT_SECRET: ${JWT_SECRET}
 
   db:
     image: postgres:17.2-alpine
     container_name: teslodb
     restart: always
-    depends_on:
-      - app
     ports:
-      - "5433:5432"
+      - ${DB_PORT}:${DB_PORT}
     environment:
+      POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: ${DB_NAME}
     volumes:
