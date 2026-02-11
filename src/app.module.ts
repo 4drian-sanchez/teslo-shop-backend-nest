@@ -9,16 +9,17 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { MessagesWsModule } from './messages-ws/messages-ws.module';
+import { envs } from './common/envs';
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: +process.env.DB_PORT!,
-      database: process.env.DB_NAME,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASS,
+      host: envs.DB_HOST,
+      port: envs.DB_PORT,
+      database: envs.DB_NAME,
+      username: envs.DB_USERNAME,
+      password: envs.DB_PASS,
       autoLoadEntities: true,
       synchronize: true
     }),

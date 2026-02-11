@@ -20,3 +20,12 @@ npm run start:dev
 ```
 http://localhost:3000/api/seed
 ```
+
+Para crear la base de datos desde docker
+```
+  docker run --name teslo_shop -e POSTGRES_PASSWORD=mysecretpassword -e POSTGRES_DB=teslo_shop -p 5432:5432 -d postgres:17.2-alpine
+
+```
+
+Si tu NestJS está corriendo en tu PC (npm run start:dev) Debes usar: DB_HOST=localhost
+Si tu NestJS está corriendo DENTRO de otro contenedor de Docker Debes usar: DB_HOST=teslo-shop (el nombre que le pusiste al contenedor)
